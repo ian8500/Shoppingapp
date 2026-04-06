@@ -22,6 +22,15 @@ from .inventory import (
     InventoryUnit,
 )
 
+from .barcode import (
+    AddInventoryFromBarcodeRequest,
+    AddInventoryFromBarcodeResponse,
+    BarcodeLookupResponse,
+    BarcodeMappingCreateRequest,
+    BarcodeMappingCreateResponse,
+    BarcodeMappingSource,
+)
+
 from .households import (
     HouseholdCreateRequest,
     HouseholdCreateResponse,
@@ -31,6 +40,12 @@ from .households import (
 )
 
 __all__ = [
+    "BarcodeMappingSource",
+    "BarcodeMappingCreateResponse",
+    "BarcodeMappingCreateRequest",
+    "BarcodeLookupResponse",
+    "AddInventoryFromBarcodeResponse",
+    "AddInventoryFromBarcodeRequest",
     "AuthenticatedUser",
     "HealthResponse",
     "InventoryUnit",
