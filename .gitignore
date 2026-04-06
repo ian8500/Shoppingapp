@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+
+# Swift / Xcode
+DerivedData/
+*.xcworkspace/
+*.xcodeproj/xcuserdata/
+*.xcuserstate
+
+# OS
+.DS_Store
