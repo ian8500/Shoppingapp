@@ -6,6 +6,7 @@ struct HouseholdDashboardView: View {
     @ObservedObject var householdViewModel: HouseholdViewModel
     @ObservedObject var authSessionService: AuthSessionService
     @ObservedObject var shoppingListViewModel: ShoppingListViewModel
+    @ObservedObject var inventoryViewModel: InventoryViewModel
     let apiHealthy: Bool
 
     var body: some View {
@@ -17,7 +18,7 @@ struct HouseholdDashboardView: View {
                 Label("Shopping", systemImage: "cart")
             }
 
-            InventoryView()
+            InventoryView(viewModel: inventoryViewModel)
                 .tabItem {
                     Label("Inventory", systemImage: "archivebox")
                 }
