@@ -1,5 +1,13 @@
 from .auth import AuthenticatedUser
 from .health import HealthResponse
+from .shopping_list import (
+    ShoppingItemStatus,
+    ShoppingListItemCreateRequest,
+    ShoppingListItemResponse,
+    ShoppingListItemUpdateRequest,
+    ShoppingListResponse,
+)
+
 from .households import (
     HouseholdCreateRequest,
     HouseholdCreateResponse,
@@ -16,4 +24,9 @@ __all__ = [
     "HouseholdMembershipListResponse",
     "HouseholdMembershipResponse",
     "HouseholdResponse",
+    "ShoppingItemStatus",
+    "ShoppingListItemCreateRequest",
+    "ShoppingListItemResponse",
+    "ShoppingListItemUpdateRequest",
+    "ShoppingListResponse",
 ]

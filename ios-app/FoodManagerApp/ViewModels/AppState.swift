@@ -7,6 +7,7 @@ final class AppState: ObservableObject {
 
     let authSessionService: AuthSessionService?
     let householdViewModel: HouseholdViewModel?
+    let shoppingListService: ShoppingListService?
 
     private let apiClient: APIClient?
 
@@ -19,11 +20,13 @@ final class AppState: ObservableObject {
             self.apiClient = apiClient
             self.authSessionService = AuthSessionService(authClient: authClient)
             self.householdViewModel = HouseholdViewModel(apiClient: apiClient)
+            self.shoppingListService = ShoppingListService(apiClient: apiClient)
             self.configErrorMessage = nil
         } catch {
             self.apiClient = nil
             self.authSessionService = nil
             self.householdViewModel = nil
+            self.shoppingListService = nil
             self.configErrorMessage = error.localizedDescription
         }
     }
