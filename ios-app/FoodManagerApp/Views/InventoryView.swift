@@ -4,6 +4,8 @@ struct InventoryView: View {
     @ObservedObject var viewModel: InventoryViewModel
     @State private var draft = InventoryItemDraft(rawName: "", quantity: 1, unit: .count, location: nil, lowStockThreshold: nil, notes: nil)
     @State private var isPresentingAdd = false
+    @State private var isShowingScanner = false
+    @State private var knownScanQuantity: Double = 1
 
     var body: some View {
         NavigationStack {
@@ -62,11 +64,22 @@ struct InventoryView: View {
                 if viewModel.isLoading && viewModel.items.isEmpty {
                     ProgressView("Loading inventory")
                 }
+                if viewModel.isBarcodeLookupLoading {
+                    ProgressView("Looking up barcode…")
+                        .padding()
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
             }
             .refreshable { await viewModel.loadItems() }
             .navigationTitle("Inventory")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        isShowingScanner = true
+                    } label: {
+                        Label("Scan", systemImage: "barcode.viewfinder")
+                    }
+
                     Button {
                         isPresentingAdd = true
                     } label: {
@@ -77,12 +90,125 @@ struct InventoryView: View {
             .sheet(isPresented: $isPresentingAdd) {
                 addItemSheet
             }
+            .fullScreenCover(isPresented: $isShowingScanner) {
+                scannerSheet
+            }
+            .sheet(item: $viewModel.knownScanState) { state in
+                knownProductSheet(state: state)
+            }
+            .sheet(item: $viewModel.unknownScanState) { _ in
+                unknownProductSheet
+            }
             .task { await viewModel.loadItems() }
             .alert("Inventory update failed", isPresented: .constant(viewModel.errorMessage != nil), actions: {
                 Button("OK") { viewModel.errorMessage = nil }
             }, message: {
                 Text(viewModel.errorMessage ?? "Unknown error")
             })
+            .alert("Barcode added", isPresented: .constant(viewModel.scanSuccessMessage != nil), actions: {
+                Button("OK") { viewModel.scanSuccessMessage = nil }
+            }, message: {
+                Text(viewModel.scanSuccessMessage ?? "")
+            })
+        }
+    }
+
+    private var scannerSheet: some View {
+        ZStack(alignment: .topTrailing) {
+            BarcodeScannerView(onCodeScanned: { code in
+                isShowingScanner = false
+                Task { await viewModel.handleScannedBarcode(code) }
+            }, onError: { message in
+                isShowingScanner = false
+                viewModel.errorMessage = message
+            })
+            .ignoresSafeArea()
+
+            Button("Close") {
+                isShowingScanner = false
+            }
+            .padding()
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private func knownProductSheet(state: KnownBarcodeScanState) -> some View {
+        NavigationStack {
+            Form {
+                Section("Detected Product") {
+                    Text(state.productName)
+                    Text("Barcode: \(state.barcode)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Quantity") {
+                    Stepper(value: $knownScanQuantity, in: 0.5...100, step: 0.5) {
+                        Text("\(knownScanQuantity.formatted())")
+                    }
+                }
+            }
+            .onAppear { knownScanQuantity = 1 }
+            .navigationTitle("Confirm Product")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { viewModel.knownScanState = nil }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Add") {
+                        Task { await viewModel.confirmKnownBarcode(quantity: knownScanQuantity) }
+                    }
+                }
+            }
+        }
+    }
+
+    private var unknownProductSheet: some View {
+        NavigationStack {
+            Form {
+                Section("Barcode") {
+                    Text(viewModel.unknownScanState?.barcode ?? "")
+                        .font(.callout.monospaced())
+                }
+
+                Section("Create Product") {
+                    TextField(
+                        "Product name",
+                        text: Binding(
+                            get: { viewModel.unknownScanState?.productName ?? "" },
+                            set: { viewModel.unknownScanState?.productName = $0 }
+                        )
+                    )
+                    Stepper(
+                        value: Binding(
+                            get: { viewModel.unknownScanState?.quantity ?? 1 },
+                            set: { viewModel.unknownScanState?.quantity = $0 }
+                        ),
+                        in: 0.5...100,
+                        step: 0.5
+                    ) {
+                        Text("Quantity: \((viewModel.unknownScanState?.quantity ?? 1).formatted())")
+                    }
+                    Toggle(
+                        "Remember this barcode",
+                        isOn: Binding(
+                            get: { viewModel.unknownScanState?.shouldRememberMapping ?? true },
+                            set: { viewModel.unknownScanState?.shouldRememberMapping = $0 }
+                        )
+                    )
+                }
+            }
+            .navigationTitle("Unknown Barcode")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { viewModel.unknownScanState = nil }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save") {
+                        Task { await viewModel.submitUnknownBarcode() }
+                    }
+                }
+            }
         }
     }
 

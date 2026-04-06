@@ -90,6 +90,58 @@ final class APIClient {
 
 
 
+
+    func lookupBarcode(householdID: UUID, accessToken: String, barcode: String) async throws -> BarcodeLookupResult {
+        let encoded = barcode.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? barcode
+        return try await request(
+            path: "/api/v1/households/\(householdID.uuidString)/barcode-mappings/\(encoded)",
+            method: "GET",
+            authToken: accessToken,
+            requestBody: Optional<String>.none
+        )
+    }
+
+    func createBarcodeMapping(
+        householdID: UUID,
+        accessToken: String,
+        barcode: String,
+        productName: String,
+        source: String = "manual",
+        confidence: Double = 1
+    ) async throws {
+        _ = try await request(
+            path: "/api/v1/households/\(householdID.uuidString)/barcode-mappings",
+            method: "POST",
+            authToken: accessToken,
+            requestBody: BarcodeMappingCreateRequest(barcode: barcode, productName: productName, source: source, confidence: confidence)
+        ) as BarcodeMappingCreateResponse
+    }
+
+    func addInventoryFromBarcode(
+        householdID: UUID,
+        accessToken: String,
+        barcode: String,
+        quantity: Double,
+        unit: InventoryUnit,
+        productName: String?,
+        saveMapping: Bool
+    ) async throws -> BarcodeAddInventoryResult {
+        try await request(
+            path: "/api/v1/households/\(householdID.uuidString)/barcode-mappings/add-to-inventory",
+            method: "POST",
+            authToken: accessToken,
+            requestBody: BarcodeAddInventoryRequest(
+                barcode: barcode,
+                quantity: quantity,
+                unit: unit.rawValue,
+                productName: productName,
+                saveMapping: saveMapping,
+                source: "manual",
+                confidence: 1
+            )
+        )
+    }
+
     func listInventoryItems(householdID: UUID, accessToken: String) async throws -> InventoryListResponse {
         try await request(
             path: "/api/v1/households/\(householdID.uuidString)/inventory",
@@ -324,4 +376,43 @@ struct InventoryListResponse: Decodable {
 
 struct InventoryTransactionListResponse: Decodable {
     let transactions: [InventoryTransaction]
+}
+
+
+private struct BarcodeMappingCreateRequest: Encodable {
+    let barcode: String
+    let productName: String
+    let source: String
+    let confidence: Double
+
+    enum CodingKeys: String, CodingKey {
+        case barcode
+        case productName = "product_name"
+        case source
+        case confidence
+    }
+}
+
+private struct BarcodeMappingCreateResponse: Decodable {
+    let barcode: String
+}
+
+private struct BarcodeAddInventoryRequest: Encodable {
+    let barcode: String
+    let quantity: Double
+    let unit: String
+    let productName: String?
+    let saveMapping: Bool
+    let source: String
+    let confidence: Double
+
+    enum CodingKeys: String, CodingKey {
+        case barcode
+        case quantity
+        case unit
+        case productName = "product_name"
+        case saveMapping = "save_mapping"
+        case source
+        case confidence
+    }
 }

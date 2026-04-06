@@ -16,6 +16,32 @@ final class InventoryService {
         self.apiClient = apiClient
     }
 
+
+
+    func lookupBarcode(householdID: UUID, accessToken: String, barcode: String) async throws -> BarcodeLookupResult {
+        try await apiClient.lookupBarcode(householdID: householdID, accessToken: accessToken, barcode: barcode)
+    }
+
+    func addFromBarcode(
+        householdID: UUID,
+        accessToken: String,
+        barcode: String,
+        quantity: Double,
+        unit: InventoryUnit = .count,
+        productName: String?,
+        saveMapping: Bool
+    ) async throws -> BarcodeAddInventoryResult {
+        try await apiClient.addInventoryFromBarcode(
+            householdID: householdID,
+            accessToken: accessToken,
+            barcode: barcode,
+            quantity: quantity,
+            unit: unit,
+            productName: productName,
+            saveMapping: saveMapping
+        )
+    }
+
     func listItems(householdID: UUID, accessToken: String) async throws -> [InventoryItem] {
         try await apiClient.listInventoryItems(householdID: householdID, accessToken: accessToken).items
     }

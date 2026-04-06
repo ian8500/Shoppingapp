@@ -170,3 +170,40 @@ struct InventoryTransaction: Identifiable, Codable, Equatable {
         case createdAt = "created_at"
     }
 }
+
+
+struct BarcodeLookupResult: Codable, Equatable {
+    let barcode: String
+    let found: Bool
+    let productID: UUID?
+    let productName: String?
+    let mappingSource: String?
+    let mappingConfidence: Double?
+    let metadata: [String: String]?
+
+    enum CodingKeys: String, CodingKey {
+        case barcode
+        case found
+        case productID = "product_id"
+        case productName = "product_name"
+        case mappingSource = "mapping_source"
+        case mappingConfidence = "mapping_confidence"
+        case metadata
+    }
+}
+
+struct BarcodeAddInventoryResult: Codable, Equatable {
+    let barcode: String
+    let mappingCreated: Bool
+    let productID: UUID
+    let productName: String
+    let inventoryItem: InventoryItem
+
+    enum CodingKeys: String, CodingKey {
+        case barcode
+        case mappingCreated = "mapping_created"
+        case productID = "product_id"
+        case productName = "product_name"
+        case inventoryItem = "inventory_item"
+    }
+}
