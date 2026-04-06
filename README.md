@@ -163,3 +163,34 @@ Response:
 - Expand `role` handling to enforce admin/member actions in backend services.
 - Add backend auth dependency helpers for permission checks by household.
 - Add dashboard sections for pending invites and member management.
+
+
+### Shopping list endpoints
+
+All shopping list endpoints are household-scoped and require bearer auth. Membership is enforced server-side through `household_members` status checks.
+
+- `GET /api/v1/households/{household_id}/shopping-items`
+- `POST /api/v1/households/{household_id}/shopping-items`
+- `PATCH /api/v1/households/{household_id}/shopping-items/{item_id}`
+- `POST /api/v1/households/{household_id}/shopping-items/{item_id}/mark-bought`
+- `DELETE /api/v1/households/{household_id}/shopping-items/{item_id}` (archive)
+
+Shopping item API shape:
+
+```json
+{
+  "id": "uuid",
+  "household_id": "uuid",
+  "product_id": "uuid|null",
+  "raw_name": "Milk",
+  "quantity": 1,
+  "unit": "gallon",
+  "category": "Dairy",
+  "notes": "2%",
+  "status": "active|bought|archived",
+  "added_by": "uuid",
+  "bought_by": "uuid|null",
+  "created_at": "2026-04-06T00:00:00+00:00",
+  "updated_at": "2026-04-06T00:00:00+00:00"
+}
+```

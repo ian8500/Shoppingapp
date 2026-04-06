@@ -5,9 +5,36 @@ struct HouseholdDashboardView: View {
     let memberships: [HouseholdMembership]
     @ObservedObject var householdViewModel: HouseholdViewModel
     @ObservedObject var authSessionService: AuthSessionService
+    @ObservedObject var shoppingListViewModel: ShoppingListViewModel
     let apiHealthy: Bool
 
     var body: some View {
+        TabView {
+            NavigationStack {
+                ShoppingListView(viewModel: shoppingListViewModel)
+            }
+            .tabItem {
+                Label("Shopping", systemImage: "cart")
+            }
+
+            InventoryView()
+                .tabItem {
+                    Label("Inventory", systemImage: "archivebox")
+                }
+
+            RecipesView()
+                .tabItem {
+                    Label("Recipes", systemImage: "book")
+                }
+
+            householdHome
+                .tabItem {
+                    Label("Household", systemImage: "house")
+                }
+        }
+    }
+
+    private var householdHome: some View {
         NavigationStack {
             List {
                 Section("Current Household") {
@@ -17,12 +44,11 @@ struct HouseholdDashboardView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Household Dashboard") {
+                Section("System") {
                     Label(apiHealthy ? "Backend connected" : "Backend not reachable", systemImage: apiHealthy ? "checkmark.circle.fill" : "exclamationmark.triangle")
                         .foregroundStyle(apiHealthy ? .green : .orange)
-                    Text("Invites and permission controls can be layered on this screen next.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    Label(shoppingListViewModel.isRealtimeConnected ? "Realtime connected" : "Realtime unavailable", systemImage: shoppingListViewModel.isRealtimeConnected ? "bolt.horizontal.circle.fill" : "bolt.slash")
+                        .foregroundStyle(shoppingListViewModel.isRealtimeConnected ? .green : .secondary)
                 }
 
                 if memberships.count > 1 {
@@ -50,6 +76,7 @@ struct HouseholdDashboardView: View {
                         Task {
                             guard let token = authSessionService.session?.accessToken else { return }
                             await householdViewModel.loadMemberships(accessToken: token)
+                            await shoppingListViewModel.loadItems()
                         }
                     }
 
