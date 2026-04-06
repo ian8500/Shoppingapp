@@ -88,6 +88,78 @@ final class APIClient {
         ) as EmptyAPIResponse
     }
 
+
+
+    func listInventoryItems(householdID: UUID, accessToken: String) async throws -> InventoryListResponse {
+        try await request(
+            path: "/api/v1/households/\(householdID.uuidString)/inventory",
+            method: "GET",
+            authToken: accessToken,
+            requestBody: Optional<String>.none
+        )
+    }
+
+    func createInventoryItem(householdID: UUID, accessToken: String, draft: InventoryItemDraft) async throws -> InventoryItem {
+        try await request(
+            path: "/api/v1/households/\(householdID.uuidString)/inventory",
+            method: "POST",
+            authToken: accessToken,
+            requestBody: InventoryCreateRequest.fromDraft(draft)
+        )
+    }
+
+    func patchInventoryItem(
+        householdID: UUID,
+        accessToken: String,
+        itemID: UUID,
+        threshold: Double?,
+        location: InventoryLocation?,
+        notes: String?
+    ) async throws -> InventoryItem {
+        try await request(
+            path: "/api/v1/households/\(householdID.uuidString)/inventory/\(itemID.uuidString)",
+            method: "PATCH",
+            authToken: accessToken,
+            requestBody: InventoryPatchRequest(lowStockThreshold: threshold, location: location?.rawValue, notes: notes)
+        )
+    }
+
+    func incrementInventoryItem(householdID: UUID, accessToken: String, itemID: UUID, amount: Double) async throws -> InventoryItem {
+        try await request(
+            path: "/api/v1/households/\(householdID.uuidString)/inventory/\(itemID.uuidString)/increment",
+            method: "POST",
+            authToken: accessToken,
+            requestBody: InventoryDeltaRequest(amount: amount, reason: "purchase", note: nil)
+        )
+    }
+
+    func decrementInventoryItem(householdID: UUID, accessToken: String, itemID: UUID, amount: Double) async throws -> InventoryItem {
+        try await request(
+            path: "/api/v1/households/\(householdID.uuidString)/inventory/\(itemID.uuidString)/decrement",
+            method: "POST",
+            authToken: accessToken,
+            requestBody: InventoryDeltaRequest(amount: amount, reason: "consume", note: nil)
+        )
+    }
+
+    func markInventoryItemFinished(householdID: UUID, accessToken: String, itemID: UUID) async throws -> InventoryItem {
+        try await request(
+            path: "/api/v1/households/\(householdID.uuidString)/inventory/\(itemID.uuidString)/mark-finished",
+            method: "POST",
+            authToken: accessToken,
+            requestBody: Optional<String>.none
+        )
+    }
+
+    func listInventoryTransactions(householdID: UUID, accessToken: String) async throws -> InventoryTransactionListResponse {
+        try await request(
+            path: "/api/v1/households/\(householdID.uuidString)/inventory/transactions",
+            method: "GET",
+            authToken: accessToken,
+            requestBody: Optional<String>.none
+        )
+    }
+
     private func request<T: Decodable, B: Encodable>(
         path: String,
         method: String,
@@ -196,4 +268,60 @@ struct HouseholdAPIModel: Decodable {
     var asDomain: Household {
         Household(id: id, name: name, createdBy: createdBy, createdAt: createdAt)
     }
+}
+
+
+private struct InventoryCreateRequest: Encodable {
+    let rawName: String
+    let quantity: Double
+    let unit: String
+    let location: String?
+    let lowStockThreshold: Double?
+    let notes: String?
+
+    enum CodingKeys: String, CodingKey {
+        case rawName = "raw_name"
+        case quantity
+        case unit
+        case location
+        case lowStockThreshold = "low_stock_threshold"
+        case notes
+    }
+
+    static func fromDraft(_ draft: InventoryItemDraft) -> InventoryCreateRequest {
+        InventoryCreateRequest(
+            rawName: draft.rawName,
+            quantity: draft.quantity,
+            unit: draft.unit.rawValue,
+            location: draft.location?.rawValue,
+            lowStockThreshold: draft.lowStockThreshold,
+            notes: draft.notes
+        )
+    }
+}
+
+private struct InventoryPatchRequest: Encodable {
+    let lowStockThreshold: Double?
+    let location: String?
+    let notes: String?
+
+    enum CodingKeys: String, CodingKey {
+        case lowStockThreshold = "low_stock_threshold"
+        case location
+        case notes
+    }
+}
+
+private struct InventoryDeltaRequest: Encodable {
+    let amount: Double
+    let reason: String
+    let note: String?
+}
+
+struct InventoryListResponse: Decodable {
+    let items: [InventoryItem]
+}
+
+struct InventoryTransactionListResponse: Decodable {
+    let transactions: [InventoryTransaction]
 }

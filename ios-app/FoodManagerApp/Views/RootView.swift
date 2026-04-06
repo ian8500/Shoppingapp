@@ -9,12 +9,14 @@ struct RootView: View {
                 ContentUnavailableView("Configuration Error", systemImage: "exclamationmark.triangle", description: Text(configErrorMessage))
             } else if let authSessionService = appState.authSessionService,
                       let householdViewModel = appState.householdViewModel,
-                      let shoppingListService = appState.shoppingListService {
+                      let shoppingListService = appState.shoppingListService,
+                      let inventoryService = appState.inventoryService {
                 AuthenticationFlowView(
                     authSessionService: authSessionService,
                     householdViewModel: householdViewModel,
                     shoppingListService: shoppingListService,
-                    apiHealthy: appState.apiHealthy
+                    apiHealthy: appState.apiHealthy,
+                    inventoryService: inventoryService
                 )
             } else {
                 ProgressView("Loading app configuration")
@@ -32,6 +34,7 @@ private struct AuthenticationFlowView: View {
     @ObservedObject var householdViewModel: HouseholdViewModel
     let shoppingListService: ShoppingListService
     let apiHealthy: Bool
+    let inventoryService: InventoryService
 
     var body: some View {
         if !authSessionService.isAuthenticated {
@@ -45,7 +48,8 @@ private struct AuthenticationFlowView: View {
                 authSessionService: authSessionService,
                 shoppingListService: shoppingListService,
                 accessToken: accessToken,
-                apiHealthy: apiHealthy
+                apiHealthy: apiHealthy,
+                inventoryService: inventoryService
             )
             .task(id: authSessionService.session?.accessToken) {
                 await loadMemberships()
@@ -72,8 +76,10 @@ private struct HouseholdDashboardContainerView: View {
     let shoppingListService: ShoppingListService
     let accessToken: String
     let apiHealthy: Bool
+    let inventoryService: InventoryService
 
     @StateObject private var shoppingListViewModel: ShoppingListViewModel
+    @StateObject private var inventoryViewModel: InventoryViewModel
 
     init(
         selectedMembership: HouseholdMembership,
@@ -82,7 +88,8 @@ private struct HouseholdDashboardContainerView: View {
         authSessionService: AuthSessionService,
         shoppingListService: ShoppingListService,
         accessToken: String,
-        apiHealthy: Bool
+        apiHealthy: Bool,
+        inventoryService: InventoryService
     ) {
         self.selectedMembership = selectedMembership
         self.memberships = memberships
@@ -91,9 +98,17 @@ private struct HouseholdDashboardContainerView: View {
         self.shoppingListService = shoppingListService
         self.accessToken = accessToken
         self.apiHealthy = apiHealthy
+        self.inventoryService = inventoryService
         _shoppingListViewModel = StateObject(
             wrappedValue: ShoppingListViewModel(
                 shoppingService: shoppingListService,
+                householdID: selectedMembership.householdID,
+                accessToken: accessToken
+            )
+        )
+        _inventoryViewModel = StateObject(
+            wrappedValue: InventoryViewModel(
+                inventoryService: inventoryService,
                 householdID: selectedMembership.householdID,
                 accessToken: accessToken
             )
@@ -107,7 +122,8 @@ private struct HouseholdDashboardContainerView: View {
             householdViewModel: householdViewModel,
             authSessionService: authSessionService,
             shoppingListViewModel: shoppingListViewModel,
-            apiHealthy: apiHealthy
+            apiHealthy: apiHealthy,
+            inventoryViewModel: inventoryViewModel
         )
     }
 }

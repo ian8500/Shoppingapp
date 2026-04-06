@@ -8,6 +8,20 @@ from .shopping_list import (
     ShoppingListResponse,
 )
 
+from .inventory import (
+    InventoryAdjustmentReason,
+    InventoryItemCreateRequest,
+    InventoryItemPatchRequest,
+    InventoryItemResponse,
+    InventoryListResponse,
+    InventoryLocation,
+    InventoryQuantityDeltaRequest,
+    InventoryQuantityUpdateRequest,
+    InventoryTransactionListResponse,
+    InventoryTransactionResponse,
+    InventoryUnit,
+)
+
 from .households import (
     HouseholdCreateRequest,
     HouseholdCreateResponse,
@@ -19,6 +33,17 @@ from .households import (
 __all__ = [
     "AuthenticatedUser",
     "HealthResponse",
+    "InventoryUnit",
+    "InventoryTransactionResponse",
+    "InventoryTransactionListResponse",
+    "InventoryQuantityUpdateRequest",
+    "InventoryQuantityDeltaRequest",
+    "InventoryLocation",
+    "InventoryListResponse",
+    "InventoryItemResponse",
+    "InventoryItemPatchRequest",
+    "InventoryItemCreateRequest",
+    "InventoryAdjustmentReason",
     "HouseholdCreateRequest",
     "HouseholdCreateResponse",
     "HouseholdMembershipListResponse",
