@@ -1,35 +1,51 @@
 import Foundation
 
-struct Household: Identifiable, Codable {
+struct Household: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
+    var createdBy: UUID?
+    var createdAt: Date?
 }
 
-struct InventoryItem: Identifiable, Codable {
+struct HouseholdMembership: Identifiable, Codable, Equatable {
     let id: UUID
     let householdID: UUID
-    var name: String
-    var quantity: Double
-    var barcode: String?
+    let householdName: String
+    let userID: UUID
+    let role: String
+    let status: String
+    let joinedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case householdID = "household_id"
+        case householdName = "household_name"
+        case userID = "user_id"
+        case role
+        case status
+        case joinedAt = "joined_at"
+    }
 }
 
-struct ShoppingListItem: Identifiable, Codable {
-    let id: UUID
-    let householdID: UUID
-    var label: String
-    var quantity: Double
-    var isCompleted: Bool
+struct SupabaseAuthSession: Codable, Equatable {
+    let accessToken: String
+    let refreshToken: String
+    let tokenType: String
+    let expiresIn: Int
+    let expiresAt: Int
+    let user: SupabaseUser
+
+    enum CodingKeys: String, CodingKey {
+        case accessToken = "access_token"
+        case refreshToken = "refresh_token"
+        case tokenType = "token_type"
+        case expiresIn = "expires_in"
+        case expiresAt = "expires_at"
+        case user
+    }
 }
 
-struct Recipe: Identifiable, Codable {
+struct SupabaseUser: Codable, Equatable {
     let id: UUID
-    var title: String
-    var ingredients: [RecipeIngredient]
-}
-
-struct RecipeIngredient: Identifiable, Codable {
-    let id: UUID
-    var name: String
-    var quantity: Double
-    var unit: String
+    let email: String?
 }

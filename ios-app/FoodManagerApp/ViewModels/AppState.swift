@@ -2,17 +2,29 @@ import Foundation
 
 @MainActor
 final class AppState: ObservableObject {
-    @Published var selectedTab: AppTab = .shopping
     @Published var apiHealthy: Bool = false
+    @Published var configErrorMessage: String?
+
+    let authSessionService: AuthSessionService?
+    let householdViewModel: HouseholdViewModel?
 
     private let apiClient: APIClient?
 
     init() {
-        let config = try? AppState.loadConfig()
-        if let config {
-            self.apiClient = APIClient(baseURL: config.apiBaseURL)
-        } else {
+        do {
+            let config = try AppState.loadConfig()
+            let apiClient = APIClient(baseURL: config.apiBaseURL)
+            let authClient = SupabaseAuthClient(supabaseURL: config.supabaseURL, anonKey: config.supabaseAnonKey)
+
+            self.apiClient = apiClient
+            self.authSessionService = AuthSessionService(authClient: authClient)
+            self.householdViewModel = HouseholdViewModel(apiClient: apiClient)
+            self.configErrorMessage = nil
+        } catch {
             self.apiClient = nil
+            self.authSessionService = nil
+            self.householdViewModel = nil
+            self.configErrorMessage = error.localizedDescription
         }
     }
 
@@ -29,13 +41,19 @@ final class AppState: ObservableObject {
         }
     }
 
-    private static func loadConfig() throws -> AppConfig {
-        AppConfig.fromEnvironment()
-    }
-}
+    func refreshHouseholdsIfPossible() async {
+        guard
+            let accessToken = authSessionService?.session?.accessToken,
+            let householdViewModel
+        else {
+            householdViewModel?.reset()
+            return
+        }
 
-enum AppTab: Hashable {
-    case shopping
-    case inventory
-    case recipes
+        await householdViewModel.loadMemberships(accessToken: accessToken)
+    }
+
+    private static func loadConfig() throws -> AppConfig {
+        try AppConfig.fromEnvironment()
+    }
 }
